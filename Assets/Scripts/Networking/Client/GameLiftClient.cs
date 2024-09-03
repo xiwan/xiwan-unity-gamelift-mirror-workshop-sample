@@ -14,9 +14,16 @@ using Amazon;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 using Mirror;
+using TMPro;
+using System.Text.RegularExpressions;
 
 public class GameLiftClient : MonoBehaviour
 {
+  static string ipPattern = @"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$";
+  public TMP_InputField inputAddressField;
+  public GameObject loginObject;
+  public GameObject logoutObject;
+
   public string PlayerSessionId => currentPlayerSession.PlayerSessionId;
   public string PlayerId => playerId;
 
@@ -42,19 +49,45 @@ public class GameLiftClient : MonoBehaviour
   void Start()
   {
     Debug.Log("client");
+    UIUpdate(true);
     var config = new AmazonGameLiftConfig();
     if (local)
       config.ServiceURL = "http://localhost:7778";
     else
-      config.RegionEndpoint = RegionEndpoint.USEast1;
+      config.RegionEndpoint = RegionEndpoint.USWest2;
 
     client = new AmazonGameLiftClient(aws_ak, aws_sk, config);
     playerId = Guid.NewGuid().ToString();
 
-    Quickplay();
+    //Quickplay();
   }
 
-  async void Quickplay()
+  void UIUpdate(bool status)
+  {
+    loginObject.SetActive(status);
+    logoutObject.SetActive(!status);
+  }
+
+  public void OnJoinBtn()
+  {
+    string gameIp = inputAddressField.text;
+    if (Regex.IsMatch(gameIp, ipPattern))
+    {
+      Quickplay(gameIp);
+    }
+    else
+    {
+      Debug.Log("Cannot Join!!!");
+    }
+  }
+
+  public void OnLeaveBtn()
+  {
+    UIUpdate(true);
+    networkManager.OnStopClient();
+  }
+
+  async void Quickplay(string gameIp)
   {
     var fleets = new List<string>();
     var remote_fleed_id = "";
@@ -65,16 +98,38 @@ public class GameLiftClient : MonoBehaviour
       if (fleets.Count <= 0)
         return;
       remote_fleed_id = fleets.Find(f => f == fleet_name);
+      Debug.Log($"fleet id {remote_fleed_id}");
     }
     var sessions = await GetActiveGameSessionsAsync(local ? fleet_name : remote_fleed_id);
     Debug.Log($"Found {sessions.Count} active Game Sessions");
     if (sessions.Count <= 0)
       return;
-    var sessionId = sessions.FirstOrDefault(s => s.Status == GameSessionStatus.ACTIVE).GameSessionId;
-    currentPlayerSession = await CreatePlayerSessionAsync(sessionId);
-    Debug.Log($"Successfully connected to session {currentPlayerSession.GameSessionId} at [{currentPlayerSession.DnsName}] {currentPlayerSession.IpAddress}:{currentPlayerSession.Port}");
-    networkManager.networkAddress = currentPlayerSession.IpAddress;
-    networkManager.StartClient();
+
+    string sessionId = "";
+    foreach (var s in sessions)
+    {
+      Debug.Log(gameIp);
+      Debug.Log(s.IpAddress);
+      if (s.Status == GameSessionStatus.ACTIVE && s.IpAddress == gameIp)
+      {
+        UIUpdate(false);
+        sessionId = s.GameSessionId;
+        currentPlayerSession = await CreatePlayerSessionAsync(sessionId);
+        Debug.Log($"Successfully connected to session {currentPlayerSession.GameSessionId} at [{currentPlayerSession.DnsName}] {currentPlayerSession.IpAddress}:{currentPlayerSession.Port}");
+        networkManager.networkAddress = currentPlayerSession.IpAddress;
+        networkManager.StartClient();
+      }
+    }
+    //var sessionId = sessions.FirstOrDefault(s => {
+    //  Debug.Log(gameIp);
+    //  Debug.Log(s.IpAddress);
+    //  return s.Status == GameSessionStatus.ACTIVE && s.IpAddress == gameIp;
+    //}).GameSessionId;
+
+    //currentPlayerSession = await CreatePlayerSessionAsync(sessionId);
+    //Debug.Log($"Successfully connected to session {currentPlayerSession.GameSessionId} at [{currentPlayerSession.DnsName}] {currentPlayerSession.IpAddress}:{currentPlayerSession.Port}");
+    //networkManager.networkAddress = currentPlayerSession.IpAddress;
+    //networkManager.StartClient();
   }
 
   async Task<List<string>> GetFleets(CancellationToken token = default)
