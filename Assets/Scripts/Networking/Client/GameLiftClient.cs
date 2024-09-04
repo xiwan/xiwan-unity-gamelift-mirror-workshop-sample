@@ -26,6 +26,9 @@ public class GameLiftClient : MonoBehaviour
   private Dictionary<string, Dictionary<string, string>> iniData = new Dictionary<string, Dictionary<string, string>>();
 
   static string ipPattern = @"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$";
+
+  public TMP_Text latency;
+  public TMP_Text fps;
   public TMP_InputField inputAddressField;
   public GameObject loginObject;
   public GameObject logoutObject;
@@ -49,6 +52,7 @@ public class GameLiftClient : MonoBehaviour
 
   void Awake()
   {
+    NetworkTime.PingInterval = 5;
     networkManager = FindFirstObjectByType<NetworkManager>();
   }
 
@@ -70,6 +74,13 @@ public class GameLiftClient : MonoBehaviour
     fleet_name = aws_gamelift_feet_name;
 
     UIUpdate(true);
+  }
+
+  void FixedUpdate()
+  {
+    double rtt = NetworkTime.rtt;
+    latency.text = "rtt:" + Math.Round(rtt*100, 2);
+
   }
 
   void UIUpdate(bool status)
@@ -140,8 +151,8 @@ public class GameLiftClient : MonoBehaviour
     string sessionId = "";
     foreach (var s in sessions)
     {
-      Debug.Log(gameIp);
-      Debug.Log(s.IpAddress);
+      //Debug.Log(gameIp);
+      //Debug.Log(s.IpAddress);
       if (s.Status == GameSessionStatus.ACTIVE && s.IpAddress == gameIp)
       {
         UIUpdate(false);

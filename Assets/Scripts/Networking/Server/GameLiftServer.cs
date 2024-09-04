@@ -13,6 +13,11 @@ public class GameLiftServer : MonoBehaviour
     networkManager = FindFirstObjectByType<NetworkManager>();
   }
 
+  void Update()
+  {
+    
+  }
+
   //This is an example of a simple integration with GameLift server SDK that will make game server processes go active on GameLift!
   void Start()
   {
