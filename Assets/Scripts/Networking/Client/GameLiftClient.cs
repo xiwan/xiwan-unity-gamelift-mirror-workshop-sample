@@ -16,7 +16,6 @@ using Amazon.GameLift.Model;
 using Mirror;
 using TMPro;
 using System.Text.RegularExpressions;
-using static UnityEngine.Analytics.IAnalytic;
 using System.IO;
 using UnityEditor.Rendering;
 using UnityEngine.SocialPlatforms;
@@ -80,6 +79,8 @@ public class GameLiftClient : MonoBehaviour
   {
     double rtt = NetworkTime.rtt;
     latency.text = "rtt:" + Math.Round(rtt*100, 2);
+    //Debug.Log(networkManager.sendRate);
+    fps.text = "fps:" + networkManager.sendRate;
 
   }
 

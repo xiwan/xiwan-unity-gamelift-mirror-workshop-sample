@@ -24,7 +24,7 @@ namespace Mirror.Examples.Tanks
       avgFrameRate = (int)(1f / Time.unscaledDeltaTime);
       //fps.text = "fps: " + Math.Round(avgFrameRate, 0);
 
-      Debug.Log(avgFrameRate);
+      //Debug.Log();
     }
   }
 }
