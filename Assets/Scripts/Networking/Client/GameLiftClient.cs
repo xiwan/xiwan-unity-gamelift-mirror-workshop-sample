@@ -19,6 +19,7 @@ using System.Text.RegularExpressions;
 using System.IO;
 using UnityEditor.Rendering;
 using UnityEngine.SocialPlatforms;
+using kcp2k;
 
 public class GameLiftClient : MonoBehaviour
 {
@@ -53,13 +54,18 @@ public class GameLiftClient : MonoBehaviour
   {
     NetworkTime.PingInterval = 5;
     networkManager = FindFirstObjectByType<NetworkManager>();
+    if (!string.IsNullOrEmpty(UtilsKlass.GetArg("-k")))
+    {
+      networkManager.GetComponent<KcpTransport>().port = ushort.Parse(UtilsKlass.GetArg("-k"));
+    }
+
   }
 
   void Start()
   {
     Debug.Log("client");
 
-    LoadIniFile("Config.ini");
+    LoadIniFile("config.ini");
     Dictionary<string, string> localConfig = iniData["aws"];
     bool is_local = bool.Parse(localConfig["local"]);
     string aws_ak_v = localConfig["aws_ak_v"];
@@ -130,7 +136,7 @@ public class GameLiftClient : MonoBehaviour
     if (local)
       config.ServiceURL = "http://localhost:7778";
     else
-      config.RegionEndpoint = RegionEndpoint.USWest2;
+      config.RegionEndpoint = UtilsKlass.awsRegion;
 
     client = new AmazonGameLiftClient(aws_ak, aws_sk, config);
     playerId = Guid.NewGuid().ToString();
